@@ -56,13 +56,11 @@
     </RelativeLayout>
 
 
-
-
     <ListView
         android:id="@+id/ble_list_view"
-        android:layout_below="@id/rl_bluetooth"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@id/rl_bluetooth"
         android:layout_marginTop="10dp"
         android:divider="#cccccc"
         android:dividerHeight="1px" />

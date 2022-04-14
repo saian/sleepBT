@@ -280,6 +280,7 @@ public class MainActivity extends AppCompatActivity {
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicChanged(gatt, characteristic);
             Log.e(TAG,"onCharacteristicChanged()"+characteristic.getValue());
+            //saian--
             final byte[] data=characteristic.getValue();
             runOnUiThread(new Runnable() {
                 @Override
