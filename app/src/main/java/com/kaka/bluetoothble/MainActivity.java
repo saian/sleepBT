@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.content.Intent;
@@ -63,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private UUID read_UUID_chara;
     private UUID notify_UUID_service;
     private UUID notify_UUID_chara;
+    private UUID notify_UUID_CONFIG ;  // saian++
     private UUID indicate_UUID_service;
     private UUID indicate_UUID_chara;
     private String hex="7B46363941373237323532443741397D";
@@ -245,7 +247,12 @@ public class MainActivity extends AppCompatActivity {
             //订阅通知
             mBluetoothGatt.setCharacteristicNotification(mBluetoothGatt
                     .getService(notify_UUID_service).getCharacteristic(notify_UUID_chara),true);
-
+            //saian++
+            BluetoothGattDescriptor descriptor = mBluetoothGatt.getService(notify_UUID_service)
+                    .getCharacteristic(notify_UUID_chara).getDescriptor(notify_UUID_CONFIG);
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE) ;
+            mBluetoothGatt.writeDescriptor(descriptor) ;
+            //++saian
 
             runOnUiThread(new Runnable() {
                 @Override
@@ -253,6 +260,8 @@ public class MainActivity extends AppCompatActivity {
                     bleListView.setVisibility(View.GONE);
                     operaView.setVisibility(View.VISIBLE);
                     tvSerBindStatus.setText("已连接");
+                    //saian++
+                    addText(tvResponse, "connection builded");
                 }
             });
         }
@@ -280,13 +289,10 @@ public class MainActivity extends AppCompatActivity {
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicChanged(gatt, characteristic);
             Log.e(TAG,"onCharacteristicChanged()"+characteristic.getValue());
-            //saian--
             final byte[] data=characteristic.getValue();
             runOnUiThread(new Runnable() {
                 @Override
-                public void run() {
-                    addText(tvResponse,bytes2hex(data));
-                }
+                public void run() { addText(tvResponse,bytes2hex(data)); }
             });
 
         }
@@ -313,11 +319,13 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void initServiceAndChara(){
+        /*
         List<BluetoothGattService> bluetoothGattServices= mBluetoothGatt.getServices();
         for (BluetoothGattService bluetoothGattService:bluetoothGattServices){
             List<BluetoothGattCharacteristic> characteristics=bluetoothGattService.getCharacteristics();
             for (BluetoothGattCharacteristic characteristic:characteristics){
                 int charaProp = characteristic.getProperties();
+                Log.d(TAG, "charaProp="+charaProp);
                 if ((charaProp & BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
                     read_UUID_chara=characteristic.getUuid();
                     read_UUID_service=bluetoothGattService.getUuid();
@@ -346,7 +354,12 @@ public class MainActivity extends AppCompatActivity {
 
                 }
             }
-        }
+        }*/
+        write_UUID_service = UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb");
+        write_UUID_chara = UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb");
+        notify_UUID_service = UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb");
+        notify_UUID_chara = UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb");
+        notify_UUID_CONFIG = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     }
 
     private void addText(TextView textView, String content) {
@@ -361,6 +374,8 @@ public class MainActivity extends AppCompatActivity {
     private void writeData(){
         BluetoothGattService service=mBluetoothGatt.getService(write_UUID_service);
         BluetoothGattCharacteristic charaWrite=service.getCharacteristic(write_UUID_chara);
+        //saian++
+        Log.d(TAG, "write: Service="+write_UUID_service+"---Char="+write_UUID_chara);
         byte[] data;
         String content=etWriteContent.getText().toString();
         if (!TextUtils.isEmpty(content)){
