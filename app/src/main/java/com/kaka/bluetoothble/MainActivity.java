@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.content.Intent;
+import android.nfc.Tag;
 import android.os.Build;
 import android.os.Handler;
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,6 +30,13 @@ import com.blankj.utilcode.util.ToastUtils;
 import com.kaka.bluetoothble.adapter.BleAdapter;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -72,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search_device);
+
         initView();
         initData();
         mBluetoothManager= (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
@@ -127,7 +136,14 @@ public class MainActivity extends AppCompatActivity {
                 }else{
                     checkPermissions();
                 }
-
+                /*new Thread() {
+                    @Override
+                    public void run() {
+                        //just for debug function "sendByPost()"
+                        byte[] tmp = {0x11, 0x22, 0x33, 0x44, 0x33, 0x22, 0x11};
+                        sendByPost(tmp);
+                    }
+                }.start();*/
             }
         });
         bleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -294,7 +310,14 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() { addText(tvResponse,bytes2hex(data)); }
             });
-
+            // saian+ http post
+            new Thread()
+            {
+                @Override
+                public void run() {
+                    sendByPost(data);
+                }
+            }.start();
         }
     };
     /**
@@ -421,6 +444,42 @@ public class MainActivity extends AppCompatActivity {
             sb.append(HEX.charAt(b & 0x0f));
         }
         return sb.toString();
+    }
+
+    /**
+     * send data using http post. saian+
+     */
+    private void sendByPost(byte[] data)
+    {
+        HttpURLConnection connection= null;
+        try
+        {
+            URL url = new URL("http://192.168.62.205:30082/character");
+            //URL url = new URL("http://192.168.24.115:8090");
+            connection = (HttpURLConnection)url.openConnection() ;
+            connection.setConnectTimeout(1000) ;
+            connection.setReadTimeout(1000);
+
+            connection.setRequestMethod("POST");
+            connection.setUseCaches(true);
+            connection.setDoInput(true);
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-type", "text/plain");
+
+            connection.connect();
+
+            OutputStream dataPost = connection.getOutputStream();
+            //dataPost.write(data);            // saian+: for bytes output
+            String tmp = bytes2hex(data);
+            dataPost.write(tmp.getBytes());  // saian+: for string output
+            dataPost.flush();
+            dataPost.close() ;
+            int responseCode = connection.getResponseCode();
+            Log.e(TAG, "code="+responseCode) ;
+        }catch(Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
     @Override
